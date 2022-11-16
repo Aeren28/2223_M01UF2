@@ -11,8 +11,17 @@ MSG=`nc -l $PORT`
 
 HANDSHAKE=`echo $MSG | cut -d " " -f 1`
 IP_CLIENT=`echo $MSG | cut -d " " -f 2`
+IP_CLIENT_MD5=`echo $MSG | cut -d " " -f 3`
 
 echo "(3) SEND: Comprobación"
+
+IP_MD5=`echo $IP_CLIENT | md5sum | cut -d " " -f 1`
+
+if [ "$IP_CLIENT_MD5" != "$IP_MD5" ]
+then
+	echo "ERROR 1 : IP Cliente incorrecta"
+	exit 1
+fi
 
 if [ "$HANDSHAKE" != "HOLI_TURIP" ]
 then 
@@ -44,7 +53,7 @@ fi
 
 echo "OK_FILE_NAME" | nc $IP_CLIENT $PORT
 
-echo "(8)LISTEN"
+echo "(8)LISTEN : Datos de vaca"
 
 nc -l $PORT > inbox/$FILE_NAME
 
