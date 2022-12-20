@@ -13,8 +13,6 @@ HANDSHAKE=`echo $MSG | cut -d " " -f 1`
 IP_CLIENT=`echo $MSG | cut -d " " -f 2`
 IP_CLIENT_MD5=`echo $MSG | cut -d " " -f 3`
 
-echo "(3) SEND: Comprobación"
-
 IP_MD5=`echo $IP_CLIENT | md5sum | cut -d " " -f 1`
 
 if [ "$IP_CLIENT_MD5" != "$IP_MD5" ]
@@ -22,6 +20,8 @@ then
 	echo "ERROR 1 : IP Cliente incorrecta"
 	exit 1
 fi
+
+echo "(3) SEND: Comprobación"
 
 if [ "$HANDSHAKE" != "HOLI_TURIP" ]
 then 
@@ -38,26 +38,50 @@ echo "(4) LISTEN: FILE"
 MSG=`nc -l $PORT`
 
 ARCHIVO=`echo $MSG | cut -d " " -f 1`
-FILE_NAME=`echo $MSG | cut -d " " -f 2`
+FILE_NUM=`echo $MSG | cut -d " " -f 2`
+FILE_NUM_MD5=`echo $MSG | cut -d " " -f 3`
+
+NUM_FILES_MD5=`echo $FILE_NUM | md5sum | cut -d " " -f 1`
 
 echo "(7) SEND: Comprobación de FILE"
 
 if [ "$ARCHIVO" != "FILE_NAME" ]
 then
-	echo "ERROR 2: File incorrecto"
+	echo "ERROR 3: File incorrecto"
 	
 	echo "KO_FILE_NAME" |nc $IP_CLIENT $PORT
 
-	exit 2
+	exit 3
 fi
 
 echo "OK_FILE_NAME" | nc $IP_CLIENT $PORT
 
-echo "(8)LISTEN : Datos de vaca"
+for FILE in `seq $FILE_NUM`
 
-nc -l $PORT > inbox/$FILE_NAME
+do
+	echo "Escucha para el FILE_NAME"
+	MSG=`nc -l $PORT`
 
+	ARCHIVO=`echo $MSG | cut -d " " -f 1`
+	NAME_FILE=`echo $MSG | cut -d " " -f 2`
+	NAME_FILE_CL_MD5=`echo $MSG | cut -d " " -f 3`
 
+	NAME_FILE_MD5=`echo $NAME_FILE | md5sum | cut -d " " -f 1`
+
+	echo "(8)LISTEN : Datos de vaca"
+
+	if [ "$NAME_FILE_MD5" != "$NAME_FILE_CL_MD5" ]
+	then
+		echo "ERROR 2: file name incorrect"
+		echo "KO_FILE_NAME" | nc $IP_CLIENT $PORT
+		exit 2
+	fi
+
+	echo "OK_FILE_NAME" | nc $IP_CLIENT $PORT
+
+	echo "(9) LISTEN FILE CONTENT"
+	nc -l  $PORT > inbox/$NAME_FILE
+done
 
 exit 0
 
